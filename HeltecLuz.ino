@@ -2,6 +2,7 @@
 #include "DHT.h"
 #include "Adafruit_TCS34725.h"
 #include<Wire.h>//Biblioteca para comunicação I2C
+#include <esp_task_wdt.h>
 
 const int MPU_addr=0x68; //Endereço do sensor Accel
 int16_t AcX,AcY,AcZ; //Variaveis para pegar os valores medidos
@@ -28,9 +29,9 @@ uint8_t appEui[] = { 0x26, 0x78, 0xf2, 0x1f, 0x93, 0x92, 0x0c, 0x59, 0x53, 0x89,
 uint8_t appKey[] = { 0xec, 0x81, 0xf4, 0x32, 0x0f, 0xb3, 0xdd, 0x35, 0xa1, 0x32, 0x25, 0x0e, 0x10, 0x53, 0x3f, 0xc9 };
 
 /* ABP para*/
-uint8_t nwkSKey[] = { 0xdd, 0x3e, 0xd7, 0xe8, 0x58, 0x97, 0xe3, 0x91, 0x7a, 0xf0, 0xd8, 0xc7, 0xef, 0x52, 0xfc, 0x6f };
-uint8_t appSKey[] = { 0x26, 0x78, 0xf2, 0x1f, 0x93, 0x92, 0x0c, 0x59, 0x53, 0x89, 0x97, 0xd3, 0x7c, 0x0b, 0xfd, 0x4f };
-uint32_t devAddr = (uint32_t) 0x0193a956;
+uint8_t nwkSKey[] = { 0xdb, 0x9b, 0x69, 0xd1, 0x9a, 0xa4, 0xc6, 0x6c, 0x9f, 0x37, 0xbf, 0xec, 0xc8, 0x6d, 0x75, 0x70 };
+uint8_t appSKey[] = { 0x83, 0xde, 0xf7, 0x79, 0xdc, 0x00, 0x4f, 0x46, 0x94, 0xf2, 0x2e, 0x5d, 0x90, 0x28, 0xf8, 0x2a };
+uint32_t devAddr = (uint32_t) 0x008d2f9a;
 
 
 /*LoraWan channelsmask, default channels 0-7*/
@@ -43,7 +44,7 @@ LoRaMacRegion_t loraWanRegion = ACTIVE_REGION;
 DeviceClass_t loraWanClass = CLASS_A;
 
 /*the application data transmission duty cycle.  value in [ms].*/
-uint32_t appTxDutyCycle = 300;
+uint32_t appTxDutyCycle = 1500;
 
 /*OTAA or ABP*/
 bool overTheAirActivation = true;
@@ -154,7 +155,10 @@ void coreTaskZero( void* pvParameters){
     tcs.begin();
     //Definimos o modo de saída
     deviceState = DEVICE_STATE_INIT;
+    esp_task_wdt_init(30, false);
 
+
+while(1){
     switch (deviceState) {
         case DEVICE_STATE_INIT:
         {
@@ -219,10 +223,6 @@ void coreTaskZero( void* pvParameters){
         }
         case DEVICE_STATE_SLEEP:
         {
-            tcs.getRawData(&r, &g, &b, &c);//Pega os valores "crus" do sensor referentes ao Vermelho(r), Verde(g), Azul(b) e da Claridade(c).
-            lux = tcs.calculateLux(r, g, b);
-            if(lux < 20) digitalWrite(pinoLuz, HIGH);
-            else digitalWrite(pinoLuz, LOW);
             LoRaWAN.sleep(loraWanClass);
             break;
         }
@@ -232,7 +232,7 @@ void coreTaskZero( void* pvParameters){
             break;
         }
       }
-      vTaskDelay(500);
+} 
       
 }
 
@@ -255,12 +255,13 @@ void coreTaskFour( void* pvParameters){
     //Inicializamos nosso sensor DHT11
     tcs.begin();
     //Definimos o modo de saída
-
+while(1){
   tcs.getRawData(&r, &g, &b, &c);//Pega os valores "crus" do sensor referentes ao Vermelho(r), Verde(g), Azul(b) e da Claridade(c).
   lux = tcs.calculateLux(r, g, b);
   if(lux < 20) digitalWrite(pinoLuz, HIGH);
   else digitalWrite(pinoLuz, LOW);
   vTaskDelay(500);
+}
 }
 
 void loop() {
